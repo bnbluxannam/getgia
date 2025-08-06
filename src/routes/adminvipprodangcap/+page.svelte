@@ -4,7 +4,7 @@
 
   /**
    * @typedef {Object} Product
-   * @property {number} id
+   * @property {string} _id
    * @property {string} name
    * @property {string} image
    * @property {number|null} nguyen_kim
@@ -15,21 +15,21 @@
   /** @type {Product[]} */
   let products = [];
 
-  /** @type {Product} */
+  /** @type {Partial<Product>} */
   let newProduct = {
-    id: 0,
     name: "",
     image: "",
     nguyen_kim: null,
     dien_may_xanh: null,
-    cho_lon: null,
+    cho_lon: null
   };
 
-  let editingIndex = -1;
+  let editingId = null;
   let loading = true;
 
   const api = "/api/products";
 
+  /** Load danh sách sản phẩm */
   async function loadProducts() {
     loading = true;
     const res = await fetch(api);
@@ -40,60 +40,76 @@
   /** Thêm sản phẩm */
   async function addProduct() {
     if (!newProduct.name || !newProduct.image) return alert("Nhập tên và ảnh!");
+
     const res = await fetch(api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProduct),
+      body: JSON.stringify(newProduct)
     });
+
     if (res.ok) {
       await loadProducts();
       resetForm();
+    } else {
+      alert("Thêm sản phẩm thất bại!");
     }
   }
 
   /** Bắt đầu sửa */
-  function editProduct(index) {
-    editingIndex = index;
-    newProduct = { ...products[index] };
+  function editProduct(product) {
+    editingId = product._id;
+    newProduct = {
+      name: product.name,
+      image: product.image,
+      nguyen_kim: product.nguyen_kim,
+      dien_may_xanh: product.dien_may_xanh,
+      cho_lon: product.cho_lon
+    };
   }
 
   /** Cập nhật sản phẩm */
   async function updateProduct() {
-    if (editingIndex === -1) return;
-    const res = await fetch(api, {
+    if (!editingId) return;
+
+    const res = await fetch(`${api}/${editingId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProduct),
+      body: JSON.stringify(newProduct)
     });
+
     if (res.ok) {
       await loadProducts();
       resetForm();
+    } else {
+      alert("Cập nhật thất bại!");
     }
   }
 
   /** Xóa sản phẩm */
-  async function deleteProduct(index) {
-    const id = products[index].id;
-    const res = await fetch(api, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+  async function deleteProduct(product) {
+    if (!confirm(`Xóa sản phẩm "${product.name}"?`)) return;
+
+    const res = await fetch(`${api}/${product._id}`, {
+      method: "DELETE"
     });
+
     if (res.ok) {
       await loadProducts();
+    } else {
+      alert("Xóa thất bại!");
     }
   }
 
+  /** Reset form */
   function resetForm() {
     newProduct = {
-      id: 0,
       name: "",
       image: "",
       nguyen_kim: null,
       dien_may_xanh: null,
-      cho_lon: null,
+      cho_lon: null
     };
-    editingIndex = -1;
+    editingId = null;
   }
 
   /** @param {number|null} price */
@@ -104,6 +120,7 @@
 
 <h1>Trang Admin - Quản lý sản phẩm</h1>
 <AdminSpinButton />
+
 {#if loading}
   <p>Đang tải dữ liệu...</p>
 {:else}
@@ -119,7 +136,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each products as product, index}
+      {#each products as product}
         <tr>
           <td><img src={product.image} alt={product.name} width="80" /></td>
           <td>{product.name}</td>
@@ -127,35 +144,23 @@
           <td>{formatPrice(product.dien_may_xanh)}</td>
           <td>{formatPrice(product.cho_lon)}</td>
           <td>
-            <button on:click={() => editProduct(index)}>Sửa</button>
-            <button on:click={() => deleteProduct(index)}>Xóa</button>
+            <button on:click={() => editProduct(product)}>Sửa</button>
+            <button on:click={() => deleteProduct(product)}>Xóa</button>
           </td>
         </tr>
       {/each}
     </tbody>
   </table>
 
-  <h2>{editingIndex === -1 ? "Thêm sản phẩm mới" : "Cập nhật sản phẩm"}</h2>
+  <h2>{editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới"}</h2>
   <div class="admin-form">
     <input placeholder="Tên sản phẩm" bind:value={newProduct.name} />
     <input placeholder="Đường dẫn ảnh" bind:value={newProduct.image} />
-    <input
-      type="number"
-      placeholder="Giá Nguyễn Kim"
-      bind:value={newProduct.nguyen_kim}
-    />
-    <input
-      type="number"
-      placeholder="Giá Điện Máy Xanh"
-      bind:value={newProduct.dien_may_xanh}
-    />
-    <input
-      type="number"
-      placeholder="Giá Chợ Lớn"
-      bind:value={newProduct.cho_lon}
-    />
+    <input type="number" placeholder="Giá Nguyễn Kim" bind:value={newProduct.nguyen_kim} />
+    <input type="number" placeholder="Giá Điện Máy Xanh" bind:value={newProduct.dien_may_xanh} />
+    <input type="number" placeholder="Giá Chợ Lớn" bind:value={newProduct.cho_lon} />
 
-    {#if editingIndex === -1}
+    {#if !editingId}
       <button on:click={addProduct}>Thêm sản phẩm</button>
     {:else}
       <button on:click={updateProduct}>Cập nhật sản phẩm</button>

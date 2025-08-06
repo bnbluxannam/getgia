@@ -4,7 +4,7 @@
 
 	/**
 	 * @typedef {Object} Product
-	 * @property {number} id
+	 * @property {string} _id
 	 * @property {string} name
 	 * @property {string} image
 	 * @property {number|null} nguyen_kim
@@ -20,35 +20,30 @@
 	let pageLoading = true;
 	let priceLoading = false;
 
+	// Lọc theo search
 	$: filteredProducts = products.filter((p) =>
-		p.name.toLowerCase().includes(searchQuery.toLowerCase()),
+		p.name.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
-	// Đổi sang hiển thị N/A nếu null
-	/**
-	 * @param {number|null} price
-	 * @returns {string}
-	 */
-	function formatPrice(price) {
+	// Hiển thị N/A nếu null
+	function formatPrice(price /** @type {number|null} */) {
 		return price !== null ? price.toLocaleString() + "₫" : "N/A";
 	}
 
+	// Lấy sản phẩm từ API
 	async function fetchProducts(delay = 0) {
-		const res = await fetch("/products.json");
-		if (!res.ok) throw new Error("Không tải được JSON");
+		const res = await fetch("/api/products");
+		if (!res.ok) throw new Error("Không tải được dữ liệu");
 		const data = await res.json();
 
 		const computed = /** @type {Product[]} */ (data).map((p) => {
-			// Lọc giá hợp lệ
 			const validPrices = [
 				p.nguyen_kim,
 				p.dien_may_xanh,
 				p.cho_lon,
 			].filter((v) => typeof v === "number");
 
-			// Nếu không có giá hợp lệ → rivius_price = null
-			const minPrice =
-				validPrices.length > 0 ? Math.min(...validPrices) : null;
+			const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
 
 			return {
 				...p,
@@ -56,9 +51,7 @@
 			};
 		});
 
-		if (delay > 0) {
-			await new Promise((r) => setTimeout(r, delay));
-		}
+		if (delay > 0) await new Promise((r) => setTimeout(r, delay));
 
 		products = computed;
 	}
@@ -83,9 +76,8 @@
 {/if}
 
 <h1>Danh sách sản phẩm</h1>
-<!-- Thanh search -->
 
-<SearchBar onSearchChange={(/** @type {string} */ q) => searchQuery = q} />
+<SearchBar onSearchChange={(/** @type {string} */ q) => (searchQuery = q)} />
 
 <button class="refresh-btn" on:click={refreshPrices}>🔄 Refresh giá</button>
 
@@ -102,18 +94,10 @@
 							<div class="price-spinner"></div>
 						</div>
 					{:else}
-						<p class="other">
-							Nguyễn Kim: {formatPrice(product.nguyen_kim)}
-						</p>
-						<p class="other">
-							Điện Máy Xanh: {formatPrice(product.dien_may_xanh)}
-						</p>
-						<p class="other">
-							Điện Máy Chợ Lớn: {formatPrice(product.cho_lon)}
-						</p>
-						<p class="rivius">
-							Giá Rivius: {formatPrice(product.rivius_price)}
-						</p>
+						<p class="other">Nguyễn Kim: {formatPrice(product.nguyen_kim)}</p>
+						<p class="other">Điện Máy Xanh: {formatPrice(product.dien_may_xanh)}</p>
+						<p class="other">Điện Máy Chợ Lớn: {formatPrice(product.cho_lon)}</p>
+						<p class="rivius">Giá Rivius: {formatPrice(product.rivius_price)}</p>
 					{/if}
 				</div>
 			</div>
