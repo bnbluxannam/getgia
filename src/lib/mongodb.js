@@ -1,25 +1,20 @@
-// src/lib/server/mongodb.js
+// src/lib/mongodb.js
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/getgia";
-const dbName = "getgia";
-
-// Sử dụng biến toàn cục để tránh tạo nhiều kết nối khi hot reload
-let client;
+const uri = process.env.MONGODB_URI; // Lấy từ Render Environment
+const client = new MongoClient(uri);
 let db;
 
 export async function connectDB() {
-  if (db) return db;
-
-  if (!client) {
-    client = new MongoClient(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+  if (!db) {
     await client.connect();
-    console.log("✅ Kết nối MongoDB thành công:", uri);
+    db = client.db(); // Nếu URI đã có db name thì tự động chọn db đó
+    console.log("✅ Connected to MongoDB");
   }
-
-  db = client.db(dbName);
   return db;
+}
+
+// Nếu bạn cần export getDb để tương thích với code cũ:
+export async function getDb() {
+  return await connectDB();
 }
