@@ -1,7 +1,14 @@
 import adapter from '@sveltejs/adapter-node';
+import preprocess from 'svelte-preprocess';
 
-export default {
+const config = {
+  preprocess: preprocess(),
   kit: {
-    adapter: adapter()
+    adapter: adapter(),
+    alias: {
+      $lib: 'src/lib'
+    }
   }
 };
+
+export default config;
